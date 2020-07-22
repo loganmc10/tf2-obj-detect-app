@@ -19,11 +19,12 @@ model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
 model_dir = model_name + '/saved_model'
 
 if len(sys.argv) > 2:
-    if sys.argv[2] == "RT" and not os.path.exists('rt_model/' + model_name):
-        converter = trt.TrtGraphConverterV2(input_saved_model_dir=model_dir)
-        converter.convert()
+    if sys.argv[2] == 'RT':
+        if not os.path.exists('rt_model/' + model_name):
+            converter = trt.TrtGraphConverterV2(input_saved_model_dir=model_dir)
+            converter.convert()
+            converter.save('rt_model/' + model_name)
         model_dir = 'rt_model/' + model_name
-        converter.save(model_dir)
 
 def load_image_into_numpy_array(path):
   img_data = tf.io.gfile.GFile(path, 'rb').read()
