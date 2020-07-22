@@ -4,6 +4,13 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 from six import BytesIO
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as viz_utils
+
+import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use('TkAgg')
 
 def load_image_into_numpy_array(path):
   img_data = tf.io.gfile.GFile(path, 'rb').read()
@@ -27,7 +34,6 @@ categories = label_map_util.convert_label_map_to_categories(
 category_index = label_map_util.create_category_index(categories)
 
 plt.rcParams['figure.figsize'] = [42, 21]
-label_id_offset = 1
 image_np_with_detections = image_np.copy()
 viz_utils.visualize_boxes_and_labels_on_image_array(
       image_np_with_detections,
@@ -39,5 +45,5 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
       max_boxes_to_draw=200,
       min_score_thresh=.40,
       agnostic_mode=False)
-plt.subplot(2, 1, i+1)
 plt.imshow(image_np_with_detections)
+plt.show()
