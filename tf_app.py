@@ -29,6 +29,7 @@ if len(sys.argv) > 2:
 def load_image_into_numpy_array(path):
   img_data = tf.io.gfile.GFile(path, 'rb').read()
   image = Image.open(BytesIO(img_data))
+  image.thumbnail((1920, 1080))
   (im_width, im_height) = image.size
   return np.array(image.getdata()).reshape(
       (im_height, im_width, 3)).astype(np.uint8)
