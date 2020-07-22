@@ -59,5 +59,12 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
       max_boxes_to_draw=200,
       min_score_thresh=.40,
       agnostic_mode=False)
+
+classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
+scores = detections['detection_scores'][0].numpy().tolist()
+for i in range(len(scores)):
+    if scores[i] > 0.40:
+        print(category_index[classes[i]]['name'] + " " + str(scores[i]))
+
 plt.imshow(image_np_with_detections)
 plt.show()
