@@ -1,16 +1,29 @@
 #!/usr/bin/python3
 import sys
+import os
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 from six import BytesIO
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
 import matplotlib.pyplot as plt
 import matplotlib
 
 matplotlib.use('TkAgg')
+
+model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
+
+model_dir = model_name + '/saved_model'
+
+if len(sys.argv) > 2:
+    if sys.argv[2] == "RT" and not os.path.exists('rt_model/' + model_name):
+        converter = trt.TrtGraphConverterV2(input_saved_model_dir=model_dir)
+        converter.convert()
+        model_dir = 'rt_model/' + model_name
+        converter.save(model_dir)
 
 def load_image_into_numpy_array(path):
   img_data = tf.io.gfile.GFile(path, 'rb').read()
@@ -22,7 +35,7 @@ def load_image_into_numpy_array(path):
 image_path = sys.argv[1]
 image_np = load_image_into_numpy_array(image_path)
 input_tensor = np.expand_dims(image_np, 0)
-detect_fn = tf.saved_model.load('ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model/')
+detect_fn = tf.saved_model.load(model_dir)
 detections = detect_fn(input_tensor)
 
 label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
