@@ -9,11 +9,6 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
-import matplotlib.pyplot as plt
-import matplotlib
-
-matplotlib.use('TkAgg')
-
 model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
 
 model_dir = model_name + '/saved_model'
@@ -48,7 +43,6 @@ categories = label_map_util.convert_label_map_to_categories(
     use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
-plt.rcParams['figure.figsize'] = [42, 21]
 image_np_with_detections = image_np.copy()
 viz_utils.visualize_boxes_and_labels_on_image_array(
       image_np_with_detections,
@@ -67,5 +61,5 @@ for i in range(len(scores)):
     if scores[i] > 0.40:
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
-plt.imshow(image_np_with_detections)
-plt.show()
+out_img = Image.fromarray(image_np_with_detections)
+out_img.save('pictures/output.png')
