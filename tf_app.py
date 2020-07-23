@@ -14,7 +14,6 @@ parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
 args = parser.parse_args()
 
 model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
-
 model_dir = model_name + '/saved_model'
 
 if args.rt is True:
@@ -23,6 +22,14 @@ if args.rt is True:
         converter.convert()
         converter.save('rt_model/' + model_name)
     model_dir = 'rt_model/' + model_name
+
+label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
+label_map = label_map_util.load_labelmap(label_map_path)
+categories = label_map_util.convert_label_map_to_categories(
+    label_map,
+    max_num_classes=label_map_util.get_max_label_map_index(label_map),
+    use_display_name=True)
+category_index = label_map_util.create_category_index(categories)
 
 image_path = args.file
 image_np = cv2.imread(image_path)
@@ -39,14 +46,6 @@ elif h > w and w > 1080:
 input_tensor = np.expand_dims(image_np, 0)
 detect_fn = tf.saved_model.load(model_dir)
 detections = detect_fn(input_tensor)
-
-label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
-label_map = label_map_util.load_labelmap(label_map_path)
-categories = label_map_util.convert_label_map_to_categories(
-    label_map,
-    max_num_classes=label_map_util.get_max_label_map_index(label_map),
-    use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
 
 viz_utils.visualize_boxes_and_labels_on_image_array(
       image_np,
