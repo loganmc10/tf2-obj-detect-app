@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 import sys
 import os
+import cv2
 import tensorflow as tf
 import numpy as np
-from PIL import Image
-from six import BytesIO
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
@@ -21,16 +20,18 @@ if len(sys.argv) > 2:
             converter.save('rt_model/' + model_name)
         model_dir = 'rt_model/' + model_name
 
-def load_image_into_numpy_array(path):
-  img_data = tf.io.gfile.GFile(path, 'rb').read()
-  image = Image.open(BytesIO(img_data))
-  image.thumbnail((1920, 1080))
-  (im_width, im_height) = image.size
-  return np.array(image.getdata()).reshape(
-      (im_height, im_width, 3)).astype(np.uint8)
-
 image_path = sys.argv[1]
-image_np = load_image_into_numpy_array(image_path)
+image_np = cv2.imread(image_path)
+(h, w) = image_np.shape[:2]
+if w > h and h > 1080:
+    r = 1080 / float(h)
+    dim = (int(w * r), 1080)
+    image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+elif h > w and w > 1080:
+    r = 1080 / float(w)
+    dim = (1080, int(h * r))
+    image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+
 input_tensor = np.expand_dims(image_np, 0)
 detect_fn = tf.saved_model.load(model_dir)
 detections = detect_fn(input_tensor)
@@ -60,5 +61,4 @@ for i in range(len(scores)):
     if scores[i] > 0.40:
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
-out_img = Image.fromarray(image_np)
-out_img.save('pictures/output.png')
+cv2.imwrite('pictures/output.png', image_np)
