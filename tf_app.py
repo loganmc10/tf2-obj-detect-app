@@ -13,7 +13,7 @@ parser.add_argument('-f', '--file', help='path to image file')
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
 args = parser.parse_args()
 
-model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
+model_name = 'efficientdet_d2_coco17_tpu-32'
 model_dir = model_name + '/saved_model'
 
 if args.rt is True:
