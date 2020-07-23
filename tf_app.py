@@ -43,9 +43,8 @@ categories = label_map_util.convert_label_map_to_categories(
     use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
-image_np_with_detections = image_np.copy()
 viz_utils.visualize_boxes_and_labels_on_image_array(
-      image_np_with_detections,
+      image_np,
       detections['detection_boxes'][0].numpy(),
       detections['detection_classes'][0].numpy().astype(np.int32),
       detections['detection_scores'][0].numpy(),
@@ -61,5 +60,5 @@ for i in range(len(scores)):
     if scores[i] > 0.40:
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
-out_img = Image.fromarray(image_np_with_detections)
+out_img = Image.fromarray(image_np)
 out_img.save('pictures/output.png')
