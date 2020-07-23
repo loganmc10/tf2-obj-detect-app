@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys
+import argparse
 import os
 import cv2
 import tensorflow as tf
@@ -8,19 +8,23 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-f', '--file', help='path to image file')
+parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
+args = parser.parse_args()
+
 model_name = 'ssd_mobilenet_v2_320x320_coco17_tpu-8'
 
 model_dir = model_name + '/saved_model'
 
-if len(sys.argv) > 2:
-    if sys.argv[2] == 'RT':
-        if not os.path.exists('rt_model/' + model_name):
-            converter = trt.TrtGraphConverterV2(input_saved_model_dir=model_dir)
-            converter.convert()
-            converter.save('rt_model/' + model_name)
-        model_dir = 'rt_model/' + model_name
+if args.rt is True:
+    if not os.path.exists('rt_model/' + model_name):
+        converter = trt.TrtGraphConverterV2(input_saved_model_dir=model_dir)
+        converter.convert()
+        converter.save('rt_model/' + model_name)
+    model_dir = 'rt_model/' + model_name
 
-image_path = sys.argv[1]
+image_path = args.file
 image_np = cv2.imread(image_path)
 (h, w) = image_np.shape[:2]
 if w > h and h > 1080:
