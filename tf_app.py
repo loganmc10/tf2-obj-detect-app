@@ -81,7 +81,7 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
 
 result, image = cv2.imencode('.JPEG', image_np)
 io_buf = io.BytesIO(image)
-file_name = str(time.time()) + ".jpg"
+file_name = str(time.time_ns()) + ".jpg"
 s3.upload_fileobj(io_buf, "iotcameraapp", file_name)
 
 classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
@@ -93,7 +93,7 @@ for i in range(len(scores)):
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
 occurrences = collections.Counter(items)
-occurrences['filename'] = file_name
+occurrences['file_name'] = file_name
 mqttc.publish("camera", payload=json.dumps(occurrences))
 mqttc.loop_stop()
 mqttc.disconnect()
