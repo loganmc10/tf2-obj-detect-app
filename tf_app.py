@@ -1,13 +1,26 @@
 #!/usr/bin/python3
+import json
+import collections
 import time
 import argparse
 import os
 import cv2
 import tensorflow as tf
 import numpy as np
+import paho.mqtt.client as mqtt
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
+
+def on_connect(client, userdata, flags, rc):
+    print("MQTT connection returned result: "+ mqtt.connack_string(rc))
+
+mqttc = mqtt.Client()
+mqttc.on_connect = on_connect
+mqttc.tls_set()
+mqttc.username_pw_set("mqtt", password=os.getenv('MQTT_PASSWORD'))
+mqttc.connect("iot.bacoosta.com", port=8883)
+mqttc.loop_start()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', help='path to image file')
@@ -63,10 +76,17 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
       min_score_thresh=.40,
       agnostic_mode=False)
 
+cv2.imwrite('pictures/output.jpg', image_np)
+
 classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
 scores = detections['detection_scores'][0].numpy().tolist()
+items = []
 for i in range(len(scores)):
     if scores[i] > 0.40:
+        items.append(category_index[classes[i]]['name'])
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
-cv2.imwrite('pictures/output.png', image_np)
+occurrences = collections.Counter(items)
+mqttc.publish("camera", payload=json.dumps(occurrences))
+mqttc.loop_stop()
+mqttc.disconnect()
