@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import io
+import boto3
 import json
 import collections
 import time
@@ -15,6 +17,7 @@ from tensorflow.python.compiler.tensorrt import trt_convert as trt
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
 
+s3 = boto3.client('s3')
 mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
 mqttc.tls_set()
@@ -76,7 +79,10 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
       min_score_thresh=.40,
       agnostic_mode=False)
 
-cv2.imwrite('pictures/output.jpg', image_np)
+result, image = cv2.imencode('.JPEG', image_np)
+io_buf = io.BytesIO(image)
+file_name = str(time.time()) + ".jpg"
+s3.upload_fileobj(io_buf, "iotcameraapp", file_name)
 
 classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
 scores = detections['detection_scores'][0].numpy().tolist()
@@ -87,6 +93,7 @@ for i in range(len(scores)):
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
 occurrences = collections.Counter(items)
+occurrences['filename'] = file_name
 mqttc.publish("camera", payload=json.dumps(occurrences))
 mqttc.loop_stop()
 mqttc.disconnect()
