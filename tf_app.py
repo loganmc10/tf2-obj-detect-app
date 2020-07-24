@@ -82,7 +82,7 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
 result, image = cv2.imencode('.JPEG', image_np)
 io_buf = io.BytesIO(image)
 file_name = str(time.time_ns()) + ".jpg"
-s3.upload_fileobj(io_buf, "iotcameraapp", file_name)
+s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
 
 classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
 scores = detections['detection_scores'][0].numpy().tolist()
