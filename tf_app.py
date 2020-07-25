@@ -14,8 +14,6 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
-THRESHOLD = 0.40
-
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
 
@@ -28,16 +26,17 @@ mqttc.connect("iot.bacoosta.com", port=8883)
 mqttc.loop_start()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--input', help='path to video feed')
+parser.add_argument('-i', '--input', help='path to video feed', type=str)
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
-parser.add_argument('-t', '--type', help='Imageset type (coco or oid). Defaults to coco', default="coco")
-parser.add_argument('-f', '--freq', help='Analysis frequency in seconds. Defaults to 10', default=10)
+parser.add_argument('-s', '--imageset', help='Imageset to use (coco or oid). Defaults to coco', default="coco", type=str)
+parser.add_argument('-f', '--freq', help='Analysis frequency in seconds. Defaults to 10', default=10, type=int)
+parser.add_argument('-t', '--threshold', help='detection threshold. Defaults to 0.40', default=0.40, type=float)
 args = parser.parse_args()
 
-if args.type == "coco":
+if args.imageset == "coco":
     model_name = 'efficientdet_d7_coco17_tpu-32'
     label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
-elif args.type == "oid":
+elif args.imageset == "oid":
     model_name = 'faster_rcnn_inception_resnet_v2_atrous_oid_v4_2018_12_12'
     label_map_path = 'models/research/object_detection/data/oid_v4_label_map.pbtxt'
 model_dir = model_name + '/saved_model'
@@ -52,7 +51,7 @@ if args.rt is True:
 category_index = label_map_util.create_category_index_from_labelmap(label_map_path, use_display_name=True)
 
 detect_fn = tf.saved_model.load(model_dir)
-if args.type == "oid": # Needed because it is a TF1 Model
+if args.imageset == "oid": # Needed because it is a TF1 Model
     detect_fn =  detect_fn.signatures['serving_default']
 
 cap = cv2.VideoCapture(args.input)
@@ -67,9 +66,9 @@ try:
 
         ret, image_np = cap.read()
 
-        if args.type == "coco":
+        if args.imageset == "coco":
             input_tensor = np.expand_dims(image_np, 0)
-        elif args.type == "oid":
+        elif args.imageset == "oid":
             input_tensor = tf.convert_to_tensor(image_np)
             input_tensor = input_tensor[tf.newaxis, ...]
 
@@ -79,7 +78,7 @@ try:
         scores = detections['detection_scores'][0].numpy().tolist()
         items = []
         for i in range(len(scores)):
-            if scores[i] > THRESHOLD:
+            if scores[i] > args.threshold:
                 items.append(category_index[classes[i]]['name'].replace(' ', '_'))
 
         if len(items) == 0:
@@ -93,7 +92,7 @@ try:
               category_index,
               use_normalized_coordinates=True,
               max_boxes_to_draw=200,
-              min_score_thresh=THRESHOLD,
+              min_score_thresh=args.threshold,
               line_thickness=2)
 
         (h, w) = image_np.shape[:2]
