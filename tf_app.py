@@ -31,9 +31,15 @@ mqttc.loop_start()
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', help='path to video feed')
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
+parser.add_argument('-t', '--type', help='Imageset type (coco or oid)')
 args = parser.parse_args()
 
-model_name = 'efficientdet_d2_coco17_tpu-32'
+if args.type == "coco":
+    model_name = 'efficientdet_d2_coco17_tpu-32'
+    label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
+elif args.type == "oid":
+    model_name = 'faster_rcnn_inception_resnet_v2_atrous_oid_v4_2018_12_12'
+    label_map_path = 'models/research/object_detection/data/oid_v4_label_map.pbtxt'
 model_dir = model_name + '/saved_model'
 
 if args.rt is True:
@@ -43,7 +49,6 @@ if args.rt is True:
         converter.save('rt_model/' + model_name)
     model_dir = 'rt_model/' + model_name
 
-label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
 label_map = label_map_util.load_labelmap(label_map_path)
 categories = label_map_util.convert_label_map_to_categories(
     label_map,
