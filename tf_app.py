@@ -15,6 +15,7 @@ from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
 THRESHOLD = 0.40
+FREQ = 10
 
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
@@ -53,9 +54,15 @@ category_index = label_map_util.create_category_index(categories)
 detect_fn = tf.saved_model.load(model_dir)
 
 cap = cv2.VideoCapture(args.input)
+last_time = time.time()
 
 try:
     while True:
+        sleep_time = time.time() - last_time
+        if sleep_time < FREQ:
+            time.sleep(FREQ - sleep_time)
+        last_time = time.time()
+
         ret, image_np = cap.read()
         (h, w) = image_np.shape[:2]
         if w > h and h > 1080:
