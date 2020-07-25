@@ -52,7 +52,7 @@ category_index = label_map_util.create_category_index(categories)
 
 detect_fn = tf.saved_model.load(model_dir)
 
-cap = cv.VideoCapture(args.input)
+cap = cv2.VideoCapture(args.input)
 
 try:
     while True:
@@ -70,6 +70,16 @@ try:
         input_tensor = np.expand_dims(image_np, 0)
         detections = detect_fn(input_tensor)
 
+        classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
+        scores = detections['detection_scores'][0].numpy().tolist()
+        items = []
+        for i in range(len(scores)):
+            if scores[i] > THRESHOLD:
+                items.append(category_index[classes[i]]['name'])
+
+        if len(items) == 0:
+            continue
+
         viz_utils.visualize_boxes_and_labels_on_image_array(
               image_np,
               detections['detection_boxes'][0].numpy(),
@@ -85,13 +95,6 @@ try:
         io_buf = io.BytesIO(image)
         file_name = str(time.time_ns()) + ".jpg"
         s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
-
-        classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
-        scores = detections['detection_scores'][0].numpy().tolist()
-        items = []
-        for i in range(len(scores)):
-            if scores[i] > THRESHOLD:
-                items.append(category_index[classes[i]]['name'])
 
         occurrences = collections.Counter(items)
         occurrences['file_name'] = file_name
