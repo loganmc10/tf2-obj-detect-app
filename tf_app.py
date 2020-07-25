@@ -49,12 +49,7 @@ if args.rt is True:
         converter.save('rt_model/' + model_name)
     model_dir = 'rt_model/' + model_name
 
-label_map = label_map_util.load_labelmap(label_map_path)
-categories = label_map_util.convert_label_map_to_categories(
-    label_map,
-    max_num_classes=label_map_util.get_max_label_map_index(label_map),
-    use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
+category_index = label_map_util.create_category_index_from_labelmap(label_map_path, use_display_name=True)
 
 detect_fn = tf.saved_model.load(model_dir)
 if args.type == "oid": # Needed because it is a TF1 Model
