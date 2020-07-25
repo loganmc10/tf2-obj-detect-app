@@ -99,7 +99,7 @@ try:
               use_normalized_coordinates=True,
               max_boxes_to_draw=200,
               min_score_thresh=THRESHOLD,
-              agnostic_mode=False)
+              line_thickness=2)
 
         (h, w) = image_np.shape[:2]
         if w > h and h > 1080:
