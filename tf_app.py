@@ -14,6 +14,8 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
+THRESHOLD = 0.40
+
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
 
@@ -76,7 +78,7 @@ viz_utils.visualize_boxes_and_labels_on_image_array(
       category_index,
       use_normalized_coordinates=True,
       max_boxes_to_draw=200,
-      min_score_thresh=.40,
+      min_score_thresh=THRESHOLD,
       agnostic_mode=False)
 
 result, image = cv2.imencode('.JPEG', image_np)
@@ -88,7 +90,7 @@ classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
 scores = detections['detection_scores'][0].numpy().tolist()
 items = []
 for i in range(len(scores)):
-    if scores[i] > 0.40:
+    if scores[i] > THRESHOLD:
         items.append(category_index[classes[i]]['name'])
         print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
