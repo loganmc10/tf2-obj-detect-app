@@ -35,7 +35,7 @@ parser.add_argument('-t', '--type', help='Imageset type (coco or oid)')
 args = parser.parse_args()
 
 if args.type == "coco":
-    model_name = 'efficientdet_d2_coco17_tpu-32'
+    model_name = 'efficientdet_d7_coco17_tpu-32'
     label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
 elif args.type == "oid":
     model_name = 'faster_rcnn_inception_resnet_v2_atrous_oid_v4_2018_12_12'
