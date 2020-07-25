@@ -50,6 +50,8 @@ categories = label_map_util.convert_label_map_to_categories(
     use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
+detect_fn = tf.saved_model.load(model_dir)
+
 image_path = args.file
 image_np = cv2.imread(image_path)
 (h, w) = image_np.shape[:2]
@@ -61,8 +63,6 @@ elif h > w and w > 1080:
     r = 1080 / float(w)
     dim = (1080, int(h * r))
     image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
-
-detect_fn = tf.saved_model.load(model_dir)
 
 start_time = time.time()
 input_tensor = np.expand_dims(image_np, 0)
