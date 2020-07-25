@@ -104,7 +104,7 @@ try:
         s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
 
         occurrences = collections.Counter(items)
-        occurrences['file_name'] = file_name
+        occurrences['file_name'] = '"' + file_name + '"'
         mqttc.publish("camera", payload=json.dumps(occurrences))
 
 except KeyboardInterrupt:
