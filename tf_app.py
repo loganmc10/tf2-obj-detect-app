@@ -54,7 +54,7 @@ category_index = label_map_util.create_category_index(categories)
 detect_fn = tf.saved_model.load(model_dir)
 
 cap = cv2.VideoCapture(args.input)
-last_time = time.time()
+last_time = 0
 
 try:
     while True:
