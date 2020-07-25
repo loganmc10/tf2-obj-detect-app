@@ -82,7 +82,7 @@ try:
         items = []
         for i in range(len(scores)):
             if scores[i] > THRESHOLD:
-                items.append(category_index[classes[i]]['name'])
+                items.append(category_index[classes[i]]['name'].replace(' ', '_'))
 
         if len(items) == 0:
             continue
