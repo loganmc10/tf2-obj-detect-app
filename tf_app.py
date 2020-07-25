@@ -64,11 +64,8 @@ elif h > w and w > 1080:
     dim = (1080, int(h * r))
     image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
 
-start_time = time.time()
 input_tensor = np.expand_dims(image_np, 0)
 detections = detect_fn(input_tensor)
-end_time = time.time()
-print("Execution time: " + str(end_time - start_time))
 
 viz_utils.visualize_boxes_and_labels_on_image_array(
       image_np,
@@ -92,7 +89,6 @@ items = []
 for i in range(len(scores)):
     if scores[i] > THRESHOLD:
         items.append(category_index[classes[i]]['name'])
-        print(category_index[classes[i]]['name'] + " " + str(scores[i]))
 
 occurrences = collections.Counter(items)
 occurrences['file_name'] = file_name
