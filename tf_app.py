@@ -28,7 +28,7 @@ mqttc.connect("iot.bacoosta.com", port=8883)
 mqttc.loop_start()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-f', '--file', help='path to image file')
+parser.add_argument('-i', '--input', help='path to video feed')
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
 args = parser.parse_args()
 
@@ -52,46 +52,52 @@ category_index = label_map_util.create_category_index(categories)
 
 detect_fn = tf.saved_model.load(model_dir)
 
-image_path = args.file
-image_np = cv2.imread(image_path)
-(h, w) = image_np.shape[:2]
-if w > h and h > 1080:
-    r = 1080 / float(h)
-    dim = (int(w * r), 1080)
-    image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
-elif h > w and w > 1080:
-    r = 1080 / float(w)
-    dim = (1080, int(h * r))
-    image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+cap = cv.VideoCapture(args.input)
 
-input_tensor = np.expand_dims(image_np, 0)
-detections = detect_fn(input_tensor)
+try:
+    while True:
+        ret, image_np = cap.read()
+        (h, w) = image_np.shape[:2]
+        if w > h and h > 1080:
+            r = 1080 / float(h)
+            dim = (int(w * r), 1080)
+            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+        elif h > w and w > 1080:
+            r = 1080 / float(w)
+            dim = (1080, int(h * r))
+            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
 
-viz_utils.visualize_boxes_and_labels_on_image_array(
-      image_np,
-      detections['detection_boxes'][0].numpy(),
-      detections['detection_classes'][0].numpy().astype(np.int32),
-      detections['detection_scores'][0].numpy(),
-      category_index,
-      use_normalized_coordinates=True,
-      max_boxes_to_draw=200,
-      min_score_thresh=THRESHOLD,
-      agnostic_mode=False)
+        input_tensor = np.expand_dims(image_np, 0)
+        detections = detect_fn(input_tensor)
 
-result, image = cv2.imencode('.JPEG', image_np)
-io_buf = io.BytesIO(image)
-file_name = str(time.time_ns()) + ".jpg"
-s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
+        viz_utils.visualize_boxes_and_labels_on_image_array(
+              image_np,
+              detections['detection_boxes'][0].numpy(),
+              detections['detection_classes'][0].numpy().astype(np.int32),
+              detections['detection_scores'][0].numpy(),
+              category_index,
+              use_normalized_coordinates=True,
+              max_boxes_to_draw=200,
+              min_score_thresh=THRESHOLD,
+              agnostic_mode=False)
 
-classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
-scores = detections['detection_scores'][0].numpy().tolist()
-items = []
-for i in range(len(scores)):
-    if scores[i] > THRESHOLD:
-        items.append(category_index[classes[i]]['name'])
+        result, image = cv2.imencode('.JPEG', image_np)
+        io_buf = io.BytesIO(image)
+        file_name = str(time.time_ns()) + ".jpg"
+        s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
 
-occurrences = collections.Counter(items)
-occurrences['file_name'] = file_name
-mqttc.publish("camera", payload=json.dumps(occurrences))
-mqttc.loop_stop()
-mqttc.disconnect()
+        classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
+        scores = detections['detection_scores'][0].numpy().tolist()
+        items = []
+        for i in range(len(scores)):
+            if scores[i] > THRESHOLD:
+                items.append(category_index[classes[i]]['name'])
+
+        occurrences = collections.Counter(items)
+        occurrences['file_name'] = file_name
+        mqttc.publish("camera", payload=json.dumps(occurrences))
+
+except KeyboardInterrupt:
+    cap.release()
+    mqttc.loop_stop()
+    mqttc.disconnect()
