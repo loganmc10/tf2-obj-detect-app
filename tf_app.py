@@ -15,7 +15,6 @@ from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
 THRESHOLD = 0.40
-FREQ = 10
 
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
@@ -31,7 +30,8 @@ mqttc.loop_start()
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', help='path to video feed')
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
-parser.add_argument('-t', '--type', help='Imageset type (coco or oid)')
+parser.add_argument('-t', '--type', help='Imageset type (coco or oid). Defaults to coco', default="coco")
+parser.add_argument('-f', '--freq', help='Analysis frequency in seconds. Defaults to 10', default=10)
 args = parser.parse_args()
 
 if args.type == "coco":
@@ -66,8 +66,8 @@ last_time = 0
 try:
     while True:
         sleep_time = time.time() - last_time
-        if sleep_time < FREQ:
-            time.sleep(FREQ - sleep_time)
+        if sleep_time < args.freq:
+            time.sleep(args.freq - sleep_time)
         last_time = time.time()
 
         ret, image_np = cap.read()
