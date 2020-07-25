@@ -57,6 +57,8 @@ categories = label_map_util.convert_label_map_to_categories(
 category_index = label_map_util.create_category_index(categories)
 
 detect_fn = tf.saved_model.load(model_dir)
+if args.type == "oid": # Needed because it is a TF1 Model
+    detect_fn =  detect_fn.signatures['serving_default']
 
 cap = cv2.VideoCapture(args.input)
 last_time = 0
@@ -69,17 +71,13 @@ try:
         last_time = time.time()
 
         ret, image_np = cap.read()
-        (h, w) = image_np.shape[:2]
-        if w > h and h > 1080:
-            r = 1080 / float(h)
-            dim = (int(w * r), 1080)
-            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
-        elif h > w and w > 1080:
-            r = 1080 / float(w)
-            dim = (1080, int(h * r))
-            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
 
-        input_tensor = np.expand_dims(image_np, 0)
+        if args.type == "coco":
+            input_tensor = np.expand_dims(image_np, 0)
+        elif args.type == "oid":
+            input_tensor = tf.convert_to_tensor(image_np)
+            input_tensor = input_tensor[tf.newaxis, ...]
+
         detections = detect_fn(input_tensor)
 
         classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
@@ -102,6 +100,16 @@ try:
               max_boxes_to_draw=200,
               min_score_thresh=THRESHOLD,
               agnostic_mode=False)
+
+        (h, w) = image_np.shape[:2]
+        if w > h and h > 1080:
+            r = 1080 / float(h)
+            dim = (int(w * r), 1080)
+            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+        elif h > w and w > 1080:
+            r = 1080 / float(w)
+            dim = (1080, int(h * r))
+            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
 
         result, image = cv2.imencode('.JPEG', image_np)
         io_buf = io.BytesIO(image)
