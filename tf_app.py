@@ -2,6 +2,7 @@
 import io
 import boto3
 import json
+import secrets
 import collections
 import time
 import argparse
@@ -107,7 +108,7 @@ try:
 
         result, image = cv2.imencode('.JPEG', image_np)
         io_buf = io.BytesIO(image)
-        file_name = str(time.time_ns()) + ".jpg"
+        file_name = secrets.token_hex(32) + ".jpg"
         s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
 
         occurrences = collections.Counter(items)
