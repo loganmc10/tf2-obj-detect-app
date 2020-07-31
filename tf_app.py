@@ -109,7 +109,7 @@ try:
         result, image = cv2.imencode('.JPEG', image_np)
         io_buf = io.BytesIO(image)
         file_name = secrets.token_hex(32) + ".jpg"
-        s3.upload_fileobj(io_buf, "iotcameraapp", file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
+        s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
 
         occurrences = collections.Counter(items)
         occurrences['file_name'] = '"' + file_name + '"'
