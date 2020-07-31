@@ -18,7 +18,6 @@ from tensorflow.python.compiler.tensorrt import trt_convert as trt
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
 
-s3 = boto3.client('s3')
 mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
 mqttc.tls_set()
@@ -27,12 +26,16 @@ mqttc.connect(os.getenv('MQTT_BROKER'), port=8883)
 mqttc.loop_start()
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-b', '--blob', help='blob type (s3 or azure). Defaults to s3', default="s3", type=str)
 parser.add_argument('-i', '--input', help='path to video feed', type=str)
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
 parser.add_argument('-s', '--imageset', help='Imageset to use (coco or oid). Defaults to coco', default="coco", type=str)
 parser.add_argument('-f', '--freq', help='Analysis frequency in seconds. Defaults to 10', default=10, type=int)
 parser.add_argument('-t', '--threshold', help='detection threshold. Defaults to 0.40', default=0.40, type=float)
 args = parser.parse_args()
+
+if args.blob == "s3":
+    s3 = boto3.client('s3')
 
 if args.imageset == "coco":
     model_name = 'efficientdet_d7_coco17_tpu-32'
@@ -109,7 +112,8 @@ try:
         result, image = cv2.imencode('.JPEG', image_np)
         io_buf = io.BytesIO(image)
         file_name = secrets.token_hex(32) + ".jpg"
-        s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
+        if args.blob == "s3":
+            s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
 
         occurrences = collections.Counter(items)
         occurrences['file_name'] = '"' + file_name + '"'
