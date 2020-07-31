@@ -14,6 +14,7 @@ import paho.mqtt.client as mqtt
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
+from azure.storage.blob import ContainerClient, ContentSettings
 
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
@@ -36,6 +37,8 @@ args = parser.parse_args()
 
 if args.blob == "s3":
     s3 = boto3.client('s3')
+elif args.blob == "azure:
+    az_container = ContainerClient(os.getenv('AZURE_CONTAINER_URL'), os.getenv('AZURE_CONTAINER_NAME'), credential=os.getenv('AZURE_CREDENTIAL'))
 
 if args.imageset == "coco":
     model_name = 'efficientdet_d7_coco17_tpu-32'
@@ -114,6 +117,8 @@ try:
         file_name = secrets.token_hex(32) + ".jpg"
         if args.blob == "s3":
             s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
+        elif args.blob == "azure":
+            az_container.upload_blob(file_name, io_buf, content_settings=ContentSettings(content_type='image/jpeg'))
 
         occurrences = collections.Counter(items)
         occurrences['file_name'] = '"' + file_name + '"'
