@@ -22,8 +22,8 @@ s3 = boto3.client('s3')
 mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
 mqttc.tls_set()
-mqttc.username_pw_set("mqtt", password=os.getenv('MQTT_PASSWORD'))
-mqttc.connect("iot.bacoosta.com", port=8883)
+mqttc.username_pw_set(os.getenv('MQTT_USER'), password=os.getenv('MQTT_PASSWORD'))
+mqttc.connect(os.getenv('MQTT_BROKER'), port=8883)
 mqttc.loop_start()
 
 parser = argparse.ArgumentParser()
