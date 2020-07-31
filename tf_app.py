@@ -55,7 +55,7 @@ detect_fn = tf.saved_model.load(model_dir)
 if args.imageset == "oid": # Needed because it is a TF1 Model
     detect_fn =  detect_fn.signatures['serving_default']
 
-cap = cv2.VideoCapture(args.input)
+cap = cv2.VideoCapture(args.input.split(',')[0])
 last_time = 0
 
 try:
@@ -113,7 +113,7 @@ try:
 
         occurrences = collections.Counter(items)
         occurrences['file_name'] = '"' + file_name + '"'
-        mqttc.publish("camera", payload=json.dumps(occurrences))
+        mqttc.publish(args.input.split(',')[1], payload=json.dumps(occurrences))
 
 except KeyboardInterrupt:
     cap.release()
