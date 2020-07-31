@@ -14,7 +14,7 @@ import paho.mqtt.client as mqtt
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
 from tensorflow.python.compiler.tensorrt import trt_convert as trt
-from azure.storage.blob import ContainerClient, ContentSettings
+from azure.storage.blob import ContainerClient
 
 def on_connect(client, userdata, flags, rc):
     print("MQTT connection returned result: "+ mqtt.connack_string(rc))
