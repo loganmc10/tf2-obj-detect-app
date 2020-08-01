@@ -37,7 +37,7 @@ args = parser.parse_args()
 
 if args.blob == "s3":
     s3 = boto3.client('s3')
-elif args.blob == "azure:
+elif args.blob == "azure":
     az_container = ContainerClient(os.getenv('AZURE_CONTAINER_URL'), os.getenv('AZURE_CONTAINER_NAME'), credential=os.getenv('AZURE_CREDENTIAL'))
 
 if args.imageset == "coco":
