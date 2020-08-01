@@ -61,7 +61,12 @@ detect_fn = tf.saved_model.load(model_dir)
 if args.imageset == "oid": # Needed because it is a TF1 Model
     detect_fn =  detect_fn.signatures['serving_default']
 
-cap = cv2.VideoCapture(args.input.split(',')[0])
+num_feeds = len(args.input.split())
+cap = []
+names = []
+for i in range(num_feeds):
+    cap.append(cv2.VideoCapture(args.input.split()[i].split(',')[0]))
+    names.append(args.input.split()[i].split(',')[1])
 last_time = 0
 
 try:
@@ -71,27 +76,28 @@ try:
             time.sleep(args.freq - sleep_time)
         last_time = time.time()
 
-        ret, image_np = cap.read()
+        for j in range(num_feeds):
+            ret, image_np = cap[j].read()
 
-        if args.imageset == "coco":
-            input_tensor = np.expand_dims(image_np, 0)
-        elif args.imageset == "oid":
-            input_tensor = tf.convert_to_tensor(image_np)
-            input_tensor = input_tensor[tf.newaxis, ...]
+            if args.imageset == "coco":
+                input_tensor = np.expand_dims(image_np, 0)
+            elif args.imageset == "oid":
+                input_tensor = tf.convert_to_tensor(image_np)
+                input_tensor = input_tensor[tf.newaxis, ...]
 
-        detections = detect_fn(input_tensor)
+            detections = detect_fn(input_tensor)
 
-        classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
-        scores = detections['detection_scores'][0].numpy().tolist()
-        items = []
-        for i in range(len(scores)):
-            if scores[i] > args.threshold:
-                items.append(category_index[classes[i]]['name'].replace(' ', '_'))
+            classes = detections['detection_classes'][0].numpy().astype(np.int32).tolist()
+            scores = detections['detection_scores'][0].numpy().tolist()
+            items = []
+            for i in range(len(scores)):
+                if scores[i] > args.threshold:
+                    items.append(category_index[classes[i]]['name'].replace(' ', '_'))
 
-        if len(items) == 0:
-            continue
+            if len(items) == 0:
+                continue
 
-        viz_utils.visualize_boxes_and_labels_on_image_array(
+            viz_utils.visualize_boxes_and_labels_on_image_array(
               image_np,
               detections['detection_boxes'][0].numpy(),
               detections['detection_classes'][0].numpy().astype(np.int32),
@@ -102,29 +108,30 @@ try:
               min_score_thresh=args.threshold,
               line_thickness=2)
 
-        (h, w) = image_np.shape[:2]
-        if w > h and h > 1080:
-            r = 1080 / float(h)
-            dim = (int(w * r), 1080)
-            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
-        elif h > w and w > 1080:
-            r = 1080 / float(w)
-            dim = (1080, int(h * r))
-            image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+            (h, w) = image_np.shape[:2]
+            if w > h and h > 1080:
+                r = 1080 / float(h)
+                dim = (int(w * r), 1080)
+                image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
+            elif h > w and w > 1080:
+                r = 1080 / float(w)
+                dim = (1080, int(h * r))
+                image_np = cv2.resize(image_np, dim, interpolation=cv2.INTER_AREA)
 
-        result, image = cv2.imencode('.JPEG', image_np)
-        io_buf = io.BytesIO(image)
-        file_name = secrets.token_hex(32) + ".jpg"
-        if args.blob == "s3":
-            s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
-        elif args.blob == "azure":
-            az_container.upload_blob(file_name, io_buf, content_settings=ContentSettings(content_type='image/jpeg'))
+            result, image = cv2.imencode('.JPEG', image_np)
+            io_buf = io.BytesIO(image)
+            file_name = secrets.token_hex(32) + ".jpg"
+            if args.blob == "s3":
+                s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
+            elif args.blob == "azure":
+                az_container.upload_blob(file_name, io_buf, content_settings=ContentSettings(content_type='image/jpeg'))
 
-        occurrences = collections.Counter(items)
-        occurrences['file_name'] = '"' + file_name + '"'
-        mqttc.publish(args.input.split(',')[1], payload=json.dumps(occurrences))
+            occurrences = collections.Counter(items)
+            occurrences['file_name'] = '"' + file_name + '"'
+            mqttc.publish(names[j], payload=json.dumps(occurrences))
 
 except KeyboardInterrupt:
-    cap.release()
+    for i in range(num_feeds):
+        cap[i].release()
     mqttc.loop_stop()
     mqttc.disconnect()
