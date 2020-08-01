@@ -78,6 +78,10 @@ try:
 
         for j in range(num_feeds):
             ret, image_np = cap[j].read()
+            if ret is False:
+                cap[j].release()
+                cap[j] = cv2.VideoCapture(args.input.split()[j].split(',')[0])
+                continue
 
             if args.imageset == "coco":
                 input_tensor = np.expand_dims(image_np, 0)
