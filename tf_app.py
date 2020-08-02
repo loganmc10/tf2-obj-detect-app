@@ -77,9 +77,9 @@ try:
         last_time = time.time()
 
         for j in range(num_feeds):
+            cap[j].open(args.input.split()[j].split(',')[0])
             ret, image_np = cap[j].read()
             if ret is False:
-                cap[j].open(args.input.split()[j].split(',')[0])
                 continue
 
             if args.imageset == "coco":
