@@ -91,7 +91,10 @@ try:
                 if ret is False:
                     continue
             else:
-                image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0])
+                try:
+                    image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0])
+                except urllib.error.HTTPError:
+                    continue
                 image_bytes = image_file.read()
                 current_hash = hashlib.md5(image_bytes).hexdigest()
                 if current_hash == last_hash:
