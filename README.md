@@ -1,14 +1,19 @@
 # tf2-obj-detect-app
 
 ```
-usage: tf_app.py [-h] [-i INPUT] [-r] [-t TYPE]
+usage: tf_app.py [-h] [-b BLOB] [-i INPUT] [-r] [-s IMAGESET] [-f FREQ] [-t THRESHOLD]
 
 optional arguments:
   -h, --help            show this help message and exit
+  -b BLOB, --blob BLOB  blob type (s3 or azure). Defaults to s3
   -i INPUT, --input INPUT
-                        path to video feed
+                        path to video feed. Format: "http://feedone,feed1_name http://feedtwo,feed2_name"
   -r, --rt              enable TensorRT
-  -t TYPE, --type TYPE  Imageset type (coco or oid)
+  -s IMAGESET, --imageset IMAGESET
+                        Imageset to use (coco or oid). Defaults to coco
+  -f FREQ, --freq FREQ  Analysis frequency in seconds. Defaults to 10
+  -t THRESHOLD, --threshold THRESHOLD
+                        detection threshold. Defaults to 0.40
 ```
 
 ## Workflow

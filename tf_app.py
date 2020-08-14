@@ -28,7 +28,7 @@ mqttc.loop_start()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-b', '--blob', help='blob type (s3 or azure). Defaults to s3', default="s3", type=str)
-parser.add_argument('-i', '--input', help='path to video feed', type=str)
+parser.add_argument('-i', '--input', help='path to video feed. Format: "http://feedone,feed1_name http://feedtwo,feed2_name"', type=str)
 parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
 parser.add_argument('-s', '--imageset', help='Imageset to use (coco or oid). Defaults to coco', default="coco", type=str)
 parser.add_argument('-f', '--freq', help='Analysis frequency in seconds. Defaults to 10', default=10, type=int)
