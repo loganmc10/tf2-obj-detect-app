@@ -8,6 +8,7 @@ import time
 import argparse
 import os
 import cv2
+import hashlib
 import urllib.request
 import tensorflow as tf
 import numpy as np
@@ -74,6 +75,7 @@ for i in range(num_feeds):
         type.append("image")
     names.append(args.input.split()[i].split(',')[1])
 last_time = 0
+last_hash = ""
 
 try:
     while True:
@@ -90,7 +92,13 @@ try:
                     continue
             else:
                 image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0])
-                image = np.asarray(bytearray(image_file.read()), dtype="uint8")
+                image_bytes = image_file.read()
+                current_hash = hashlib.md5(image_bytes).hexdigest()
+                if current_hash == last_hash:
+                    continue
+                else:
+                    last_hash = current_hash
+                image = np.asarray(bytearray(image_bytes), dtype="uint8")
                 image_np = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
             if args.imageset == "coco":
