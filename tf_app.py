@@ -8,6 +8,7 @@ import time
 import argparse
 import os
 import cv2
+import urllib.request
 import tensorflow as tf
 import numpy as np
 import paho.mqtt.client as mqtt
@@ -63,9 +64,14 @@ if args.imageset == "oid": # Needed because it is a TF1 Model
 
 num_feeds = len(args.input.split())
 cap = []
+type = []
 names = []
 for i in range(num_feeds):
-    cap.append(cv2.VideoCapture(args.input.split()[i].split(',')[0]))
+    if ".jpg" not in args.input.split()[i].split(',')[0]:
+        cap.append(cv2.VideoCapture(args.input.split()[i].split(',')[0]))
+        type.append("video")
+    else:
+        type.append("image")
     names.append(args.input.split()[i].split(',')[1])
 last_time = 0
 
@@ -77,10 +83,15 @@ try:
         last_time = time.time()
 
         for j in range(num_feeds):
-            cap[j].open(args.input.split()[j].split(',')[0])
-            ret, image_np = cap[j].read()
-            if ret is False:
-                continue
+            if type[j] == "video":
+                cap[j].open(args.input.split()[j].split(',')[0])
+                ret, image_np = cap[j].read()
+                if ret is False:
+                    continue
+            else:
+                image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0])
+                image = np.asarray(bytearray(image_file.read()), dtype="uint8")
+                image_np = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
             if args.imageset == "coco":
                 input_tensor = np.expand_dims(image_np, 0)
@@ -135,6 +146,7 @@ try:
 
 except KeyboardInterrupt:
     for i in range(num_feeds):
-        cap[i].release()
+        if type[i] == "video":
+            cap[i].release()
     mqttc.loop_stop()
     mqttc.disconnect()
