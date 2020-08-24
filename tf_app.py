@@ -92,7 +92,7 @@ try:
                     continue
             else:
                 try:
-                    image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0], 10)
+                    image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0], timeout=10)
                 except urllib.error.HTTPError:
                     continue
                 image_bytes = image_file.read()
