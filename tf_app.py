@@ -95,7 +95,10 @@ try:
                     image_file = urllib.request.urlopen(args.input.split()[j].split(',')[0], timeout=10)
                 except urllib.error.HTTPError:
                     continue
-                image_bytes = image_file.read()
+                try:
+                    image_bytes = image_file.read()
+                except socket.timeout:
+                    continue
                 current_hash = hashlib.md5(image_bytes).hexdigest()
                 if current_hash == last_hash:
                     continue
