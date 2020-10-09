@@ -35,6 +35,7 @@ parser.add_argument('-r', '--rt', action='store_true', help='enable TensorRT')
 parser.add_argument('-s', '--imageset', help='Imageset to use (coco or oid). Defaults to coco', default="coco", type=str)
 parser.add_argument('-f', '--freq', help='Analysis frequency in seconds. Defaults to 10', default=10, type=int)
 parser.add_argument('-t', '--threshold', help='detection threshold. Defaults to 0.40', default=0.40, type=float)
+parser.add_argument('-l', '--lite', action='store_true', help='Use a lighter tensorflow model')
 args = parser.parse_args()
 
 if args.blob == "s3":
@@ -42,7 +43,10 @@ if args.blob == "s3":
 elif args.blob == "azure":
     az_container = ContainerClient(os.getenv('AZURE_CONTAINER_URL'), os.getenv('AZURE_CONTAINER_NAME'), credential=os.getenv('AZURE_CREDENTIAL'))
 
-if args.imageset == "coco":
+if args.lite is True:
+    model_name = 'efficientdet_d0_coco17_tpu-32'
+    label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
+elif args.imageset == "coco":
     model_name = 'efficientdet_d7_coco17_tpu-32'
     label_map_path = 'models/research/object_detection/data/mscoco_label_map.pbtxt'
 elif args.imageset == "oid":
