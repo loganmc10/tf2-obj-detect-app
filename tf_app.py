@@ -146,10 +146,13 @@ try:
             result, image = cv2.imencode('.JPEG', image_np)
             io_buf = io.BytesIO(image)
             file_name = secrets.token_hex(32) + ".jpg"
-            if args.blob == "s3":
-                s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
-            elif args.blob == "azure":
-                az_container.upload_blob(file_name, io_buf, content_settings=ContentSettings(content_type='image/jpeg'))
+            try:
+                if args.blob == "s3":
+                    s3.upload_fileobj(io_buf, os.getenv('S3_BUCKET_NAME'), file_name, ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/jpeg'})
+                elif args.blob == "azure":
+                    az_container.upload_blob(file_name, io_buf, content_settings=ContentSettings(content_type='image/jpeg'))
+            except:
+                continue
 
             occurrences = collections.Counter(items)
             occurrences['file_name'] = '"' + file_name + '"'
